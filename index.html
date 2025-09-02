@@ -4,7 +4,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>실내 길 안내 로봇</title>
-  <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#111827" />
   <style>
     :root {
@@ -13,8 +12,6 @@
       --muted: #1f2937;     /* gray-800 */
       --text: #e5e7eb;      /* gray-200 */
       --accent: #3b82f6;    /* blue-500 */
-      --accent-2: #22c55e;  /* green-500 */
-      --danger: #ef4444;    /* red-500 */
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
     html, body { height: 100%; }
@@ -30,40 +27,28 @@
       min-height: 100dvh;
       display: grid;
       grid-template-rows: auto 1fr auto;
-      padding-left: env(safe-area-inset-left);
-      padding-right: env(safe-area-inset-right);
     }
     header, footer {
       padding: 12px 16px;
-      padding-top: max(12px, env(safe-area-inset-top));
-      padding-bottom: max(12px, env(safe-area-inset-bottom));
       display: flex; align-items: center; gap: 8px;
       background: transparent;
     }
-    header .title { font-size: 18px; font-weight: 700; letter-spacing: .3px; opacity: .95; }
+    header .title { font-size: 18px; font-weight: 700; }
     .spacer { flex: 1; }
 
     .btn {
-      appearance: none; border: 0; border-radius: 14px;
+      border: 0; border-radius: 14px;
       padding: 12px 16px; font-weight: 700; cursor: pointer;
       background: var(--muted); color: var(--text);
       min-height: 44px; font-size: 16px;
-      transition: transform .02s ease-in, background .2s ease;
     }
-    .btn:hover { background: #283548; }
-    .btn:active { transform: translateY(1px); }
     .btn.primary { background: var(--accent); color: white; }
-    .btn.success { background: var(--accent-2); color: #052e14; }
-    .btn.ghost { background: transparent; border: 1px solid #374151; }
-    .btn[disabled] { opacity: .5; cursor: wait; }
 
     .page {
       display: none;
       padding: 16px;
       max-width: 960px;
-      width: 100%;
       margin: 0 auto;
-      -webkit-overflow-scrolling: touch;
     }
     .page.active { display: block; }
 
@@ -72,33 +57,21 @@
     .hero p { margin: 0; opacity: .8; }
 
     .card {
-      background: radial-gradient(80% 80% at 20% 0%, #1b2240 0%, #121826 55%, #0b1020 100%);
+      background: #111827;
       border: 1px solid #1f2937; border-radius: 18px;
       padding: 16px; margin-top: 14px;
-      box-shadow: 0 8px 24px rgba(0,0,0,.25);
     }
 
     .grid { display: grid; gap: 10px; }
-    .grid.rooms { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    @media (max-width: 380px) {
-      .grid.rooms { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .room { padding: 8px; }
-      .room .num { font-size: 17px; }
-    }
-    @media (min-width: 540px) {
-      .grid.rooms { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    }
-    @media (min-width: 900px) {
-      .grid.rooms { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-    }
+    .grid.rooms { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
 
     .room {
       background: var(--card); border: 1px solid #1f2937;
       border-radius: 16px; padding: 10px; text-align: center;
-      display: flex; flex-direction: column; gap: 8px;
+      display: flex; flex-direction: column; gap: 6px;
     }
-    .room .num { font-weight: 800; font-size: 18px; letter-spacing: .3px; }
-    .room .btn { width: 100%; }
+    .room .num { font-weight: 800; font-size: 18px; }
+    .room div { font-size: 14px; line-height: 1.3; }
 
     .toolbar { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
     .search {
@@ -114,27 +87,13 @@
       border: 1px solid #243042;
     }
 
-    .toast {
-      position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
-      background: #0b1224; color: #dbeafe; border: 1px solid #1d3a70;
-      padding: 12px 16px; border-radius: 12px;
-      box-shadow: 0 10px 24px rgba(0,0,0,.35);
-      opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease;
-      max-width: calc(100% - 32px);
-    }
-    .toast.show { opacity: 1; transform: translate(-50%, -4px); }
-
-    .hidden { display: none !important; }
     footer { font-size: 12px; opacity: .7; justify-content: center; }
-    @media (prefers-reduced-motion: reduce) {
-      .toast, .btn { transition: none; }
-    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <button class="btn ghost" id="backBtn" onclick="goBack()" aria-label="뒤로">←</button>
+      <button class="btn" id="backBtn" onclick="goBack()">←</button>
       <div class="title">실내 길 안내 로봇</div>
       <div class="spacer"></div>
       <button class="btn" onclick="goHome()">홈</button>
@@ -144,7 +103,7 @@
     <main id="page-home" class="page active">
       <div class="hero">
         <h1>안내를 시작할까요?</h1>
-        <p>층을 고르고, 이동할 호실을 선택하세요.</p>
+        <p>층을 고르고, 이동할 호실을 확인하세요.</p>
       </div>
       <div class="card">
         <div class="grid" style="grid-template-columns: repeat(3, minmax(0,1fr));">
@@ -163,10 +122,6 @@
           <input id="searchInput"
                  type="text"
                  inputmode="numeric"
-                 pattern="[0-9]*"
-                 autocapitalize="off"
-                 autocomplete="off"
-                 autocorrect="off"
                  placeholder="호실 번호 검색 (예: 115)"
                  oninput="filterRooms()" />
           <button class="btn" onclick="clearSearch()">지우기</button>
@@ -183,33 +138,134 @@
     </footer>
   </div>
 
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
-
   <script>
     /* ============================
-       0) 백엔드 접속 설정 (실사용)
+       0) 호실/연구실 매핑 데이터
        ============================ */
-    const BACKEND_URL = 'https://phases-eternal-katrina-eva.trycloudflare.com';
-; // ← 실제 고정 URL로 교체
-    const API_KEY = 'demo-token-123';                    // ← 백엔드와 동일 토큰
+    const roomNames = {
+      1: {
+        101: "정보통신대학 학장실",
+        102: "전자공학과 학과사무실",
+        "102-1": "스마트ICT융합공학과 학과사무실",
+        103: "연구용실험실",
+        105: "연구용 실험실",
+        106: "해동학술정보실",
+        110: "강의실",
+        113: "강의실",
+        114: "극한반도체 회로/소자 특성분석실",
+        115: "강의실",
+        116: "강의실",
+        117: "강의실",
+        119: "강의실",
+        122: "연구용실험실",
+        123: "강의실",
+        124: "멘토링실",
+        125: "공동동아리방",
+        126: "안전공학과 학생회실",
+        128: "전자공학과 학생회실",
+        129: "정보통신대학 행정실",
+        131: "외래교수실",
+        132: "정보통신대학 학생센터",
+        133: "연구용실험실",
+        136: "연구용실험실",
+        137: "연구용실험실"
+      },
+      2: {
+        201: "전자공학과회의실",
+        "201-1": "전자공학과 교수휴게실",
+        202: "신일훈 교수연구실",
+        203: "이병한 교수연구실",
+        204: "박형철 교수연구실",
+        205: "권민우 교수연구실",
+        206: "남재원 교수연구실",
+        207: "실습준비실",
+        208: "아날로그전자실험실습실",
+        209: "마이크로프로세서연구실",
+        210: "프로젝트실습실",
+        211: "인공지능연구실",
+        212: "NX연구실",
+        "212-1": "운영체제연구실",
+        213: "반도체소자연구실",
+        214: "회로설계연구실",
+        215: "무선통신연구실",
+        216: "종합설계(작업)실",
+        217: "전자기수치해석연구실",
+        218: "전자시뮬레이션실험실습실",
+        219: "컴퓨터구조연구실",
+        220: "컴퓨터구조연구실",
+        221: "지능제어연구실",
+        222: "컴퓨터실",
+        223: "신호처리연구실",
+        224: "최승호 교수연구실",
+        225: "박민기 교수연구실",
+        226: "도현락 교수연구실",
+        227: "경연웅 교수연구실",
+        228: "양성준 교수연구실",
+        229: "이승은 교수연구실",
+        230: "정태호 교수연구실",
+        231: "이예훈 교수연구실",
+        233: "유비쿼터스컴퓨팅연구실",
+        "233-1": "아날로그집적회로설계연구실",
+        234: "유비쿼터스컴퓨팅연구실",
+        235: "종합설계제작실"
+      },
+      3: {
+        301: "김성권 교수연구실",
+        302: "최현덕 교수연구실",
+        304: "황병철 교수연구실",
+        305: "이원영 교수연구실",
+        306: "최의민 교수연구실",
+        307: "김화정 교수연구실",
+        308: "영상처리실험실",
+        "309-1": "연구용실험실",
+        "309-2": "연구용실험실",
+        310: "교수회의실",
+        311: "멀티미디어회로시스템실험실",
+        312: "ICT회로계측실험실",
+        313: "스마트미디어네트워크실험실",
+        314: "스마트ICT융합공학과 학생회실",
+        315: "기자재실",
+        316: "협동지능시스템소프트웨어연구실",
+        317: "멀티미디어실험실",
+        318: "전기전자회로실험실",
+        319: "음향공학실",
+        320: "ICT융합실험실",
+        321: "머신러닝실험실",
+        322: "실감미디어연구실",
+        323: "미디어시뮬레이션실험실",
+        324: "강의실",
+        325: "강의실",
+        326: "강의실",
+        327: "서범준 교수연구실",
+        328: "차병준 교수연구실",
+        329: "이계민 교수연구실",
+        330: "박구만 교수연구실",
+        331: "허성연 교수연구실",
+        332: "정현민 교수연구실",
+        333: "박규태 교수연구실",
+        334: "김동호 교수연구실",
+        "334-1": "호수에 오브레곤 교수연구실",
+        335: "전력전자시스템실험실",
+        "335-1": "전력전자시스템실험실",
+        336: "로봇지능 및 제어 연구실",
+        337: "집적회로설계실험실",
+        341: "ICT융합공학교육실",
+        342: "ICT공학실험실습실",
+        401: "정보통신대학 학생회실"
+      }
+    };
 
-    /* 상태 */
     let currentFloor = 1;
-    let isBusy = false;
 
     /* 페이지 전환 */
     function showPage(id) {
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.getElementById(id).classList.add('active');
-      // 뒤로 버튼 표시/숨김
-      const backBtn = document.getElementById('backBtn');
-      backBtn.classList.toggle('hidden', id === 'page-home');
+      document.getElementById('backBtn').classList.toggle('hidden', id === 'page-home');
     }
     function goHome() { showPage('page-home'); }
     function goBack() {
-      const isOnFloor = document.getElementById('page-floor').classList.contains('active');
-      if (isOnFloor) goHome();
-      else history.back();
+      if (document.getElementById('page-floor').classList.contains('active')) goHome();
     }
 
     /* 층 열기 */
@@ -221,37 +277,42 @@
       showPage('page-floor');
     }
 
-    /* 호실 범위: 1층 101~150, 2층 201~250, 3층 301~350 */
+    /* 방 리스트 생성 */
     function buildRoomsForFloor(floor) {
       const container = document.getElementById('roomList');
       container.innerHTML = '';
 
-      let start = 0, end = 0;
-      if (floor === 1) { start = 101; end = 150; }
-      else if (floor === 2) { start = 201; end = 250; }
-      else if (floor === 3) { start = 301; end = 350; }
-      else {
-        container.innerHTML = '<div style="opacity:.7; padding:8px;">준비중인 층입니다.</div>';
-        return;
-      }
+      const mapping = roomNames[floor];
+      if (!mapping) return;
 
-      for (let n = start; n <= end; n++) {
+      const keys = Object.keys(mapping).map(String).sort((a, b) => {
+        const [an, asuf] = a.split('-');
+        const [bn, bsuf] = b.split('-');
+        const na = parseInt(an, 10), nb = parseInt(bn, 10);
+        if (na !== nb) return na - nb;
+        if (!asuf && bsuf) return -1;
+        if (asuf && !bsuf) return 1;
+        return (asuf || '').localeCompare(bsuf || '', 'ko');
+      });
+
+      for (const k of keys) {
         const card = document.createElement('div');
         card.className = 'room';
+
         const num = document.createElement('div');
         num.className = 'num';
-        num.textContent = `${n}호`;
-        const btn = document.createElement('button');
-        btn.className = 'btn success';
-        btn.textContent = '이 방으로 안내';
-        btn.addEventListener('click', () => selectRoom(n));
+        num.textContent = `${k}호`;
+
+        const name = document.createElement('div');
+        name.textContent = mapping[k];
+
         card.appendChild(num);
-        card.appendChild(btn);
+        card.appendChild(name);
         container.appendChild(card);
       }
     }
 
-    /* 검색 필터 */
+    /* 검색 */
     function filterRooms() {
       const q = document.getElementById('searchInput').value.trim();
       const rooms = document.querySelectorAll('#roomList .room');
@@ -268,74 +329,8 @@
       if (focus) el.focus();
     }
 
-    /* 토스트 */
-    let toastTimer = null;
-    function showToast(msg, ms = 1600) {
-      const box = document.getElementById('toast');
-      box.textContent = msg;
-      box.classList.add('show');
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => box.classList.remove('show'), ms);
-    }
-
-    /* ============================
-       1) 네비게이션 호출 (실사용)
-       ============================ */
-async function selectRoom(roomNumber) {
-  if (isBusy) return;
-
-  // 1) 안내 진행 여부 확인
-  const ok = confirm(`${roomNumber}호로 안내를 진행하시겠습니까?`);
-  if (!ok) return;
-
-  isBusy = true;
-
-  // UI 잠금
-  const buttons = document.querySelectorAll('#roomList .room .btn');
-  buttons.forEach(b => b.disabled = true);
-
-  try {
-    // 2) "안내중…" 상태 토스트 먼저 표시
-    showToast(`${roomNumber}호 안내중...`);
-
-    // 3) 실제 백엔드 요청
-    const res = await fetch(`${BACKEND_URL}/api/navigate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': API_KEY
-      },
-      body: JSON.stringify({ room: roomNumber })
-    });
-
-    if (!res.ok) {
-      let details = '';
-      try { details = await res.text(); } catch {}
-      throw new Error(`HTTP ${res.status} ${details}`);
-    }
-
-    // 4) 안내 시작 성공 메시지
-    showToast(`${roomNumber}호로 안내를 시작합니다 🚀`);
-  } catch (e) {
-    console.error(e);
-    showToast('서버 연결 실패 😢');
-  } finally {
-    // UI 잠금 해제
-    buttons.forEach(b => b.disabled = false);
-    isBusy = false;
-  }
-}
-
-
-    /* ============================
-       2) 초기화
-       ============================ */
     document.addEventListener('DOMContentLoaded', () => {
       showPage('page-home');
-      // 서비스워커 등록 (상대경로로 배포 호환)
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js').catch(console.warn);
-      }
     });
   </script>
 </body>
