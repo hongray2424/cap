@@ -20,7 +20,6 @@
       background: linear-gradient(180deg, #0b1020, #0f172a 35%, #0b1020);
       color: var(--text);
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, Apple SD Gothic Neo, "맑은 고딕", sans-serif;
-      -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
     }
 
     .wrap {
@@ -31,7 +30,6 @@
     header, footer {
       padding: 12px 16px;
       display: flex; align-items: center; gap: 8px;
-      background: transparent;
     }
     header .title { font-size: 18px; font-weight: 700; }
     .spacer { flex: 1; }
@@ -53,7 +51,7 @@
     .page.active { display: block; }
 
     .hero { text-align: center; padding: 24px 16px 8px; }
-    .hero h1 { font-size: 26px; line-height: 1.2; margin: 4px 0 10px; }
+    .hero h1 { font-size: 26px; margin: 4px 0 10px; }
     .hero p { margin: 0; opacity: .8; }
 
     .card {
@@ -69,7 +67,10 @@
       background: var(--card); border: 1px solid #1f2937;
       border-radius: 16px; padding: 10px; text-align: center;
       display: flex; flex-direction: column; gap: 6px;
+      cursor: pointer;
+      transition: background .2s ease;
     }
+    .room:hover { background: #1c2538; }
     .room .num { font-weight: 800; font-size: 18px; }
     .room div { font-size: 14px; line-height: 1.3; }
 
@@ -103,7 +104,7 @@
     <main id="page-home" class="page active">
       <div class="hero">
         <h1>안내를 시작할까요?</h1>
-        <p>층을 고르고, 이동할 호실을 확인하세요.</p>
+        <p>층을 고르고, 이동할 호실을 선택하세요.</p>
       </div>
       <div class="card">
         <div class="grid" style="grid-template-columns: repeat(3, minmax(0,1fr));">
@@ -298,6 +299,7 @@
       for (const k of keys) {
         const card = document.createElement('div');
         card.className = 'room';
+        card.addEventListener('click', () => selectRoom(k)); // ✅ 클릭 시 안내 확인창
 
         const num = document.createElement('div');
         num.className = 'num';
@@ -311,6 +313,30 @@
         container.appendChild(card);
       }
     }
+
+    /* 안내 시작 */
+    async function selectRoom(roomNumber) {
+  const ok = confirm(`${roomNumber}호로 안내를 진행하시겠습니까?`);
+  if (!ok) return;
+
+  try {
+    // 서버 호출 (데모용이니 실제 URL/토큰 필요)
+    const res = await fetch("http://localhost:8000/api/navigate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ room: roomNumber })
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+
+    alert(`${roomNumber}호로 안내를 시작합니다 🚀`);
+  } catch (err) {
+    console.error(err);
+    alert("서버 연결 실패 😢");
+  }
+}
 
     /* 검색 */
     function filterRooms() {
