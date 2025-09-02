@@ -281,40 +281,51 @@
     /* ============================
        1) 네비게이션 호출 (실사용)
        ============================ */
-    async function selectRoom(roomNumber) {
-      if (isBusy) return;
-      isBusy = true;
+async function selectRoom(roomNumber) {
+  if (isBusy) return;
 
-      // UI 잠금
-      const buttons = document.querySelectorAll('#roomList .room .btn');
-      buttons.forEach(b => b.disabled = true);
+  // 1) 안내 진행 여부 확인
+  const ok = confirm(`${roomNumber}호로 안내를 진행하시겠습니까?`);
+  if (!ok) return;
 
-      try {
-        const res = await fetch(`${BACKEND_URL}/api/navigate`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': API_KEY
-          },
-          body: JSON.stringify({ room: roomNumber })
-        });
+  isBusy = true;
 
-        if (!res.ok) {
-          let details = '';
-          try { details = await res.text(); } catch {}
-          throw new Error(`HTTP ${res.status} ${details}`);
-        }
+  // UI 잠금
+  const buttons = document.querySelectorAll('#roomList .room .btn');
+  buttons.forEach(b => b.disabled = true);
 
-        showToast(`${roomNumber}호로 안내를 시작합니다`);
-      } catch (e) {
-        console.error(e);
-        showToast('서버 연결 실패 😢');
-      } finally {
-        // UI 잠금 해제
-        buttons.forEach(b => b.disabled = false);
-        isBusy = false;
-      }
+  try {
+    // 2) "안내중…" 상태 토스트 먼저 표시
+    showToast(`${roomNumber}호 안내중...`);
+
+    // 3) 실제 백엔드 요청
+    const res = await fetch(`${BACKEND_URL}/api/navigate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': API_KEY
+      },
+      body: JSON.stringify({ room: roomNumber })
+    });
+
+    if (!res.ok) {
+      let details = '';
+      try { details = await res.text(); } catch {}
+      throw new Error(`HTTP ${res.status} ${details}`);
     }
+
+    // 4) 안내 시작 성공 메시지
+    showToast(`${roomNumber}호로 안내를 시작합니다 🚀`);
+  } catch (e) {
+    console.error(e);
+    showToast('서버 연결 실패 😢');
+  } finally {
+    // UI 잠금 해제
+    buttons.forEach(b => b.disabled = false);
+    isBusy = false;
+  }
+}
+
 
     /* ============================
        2) 초기화
