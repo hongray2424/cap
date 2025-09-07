@@ -7,11 +7,11 @@
   <meta name="theme-color" content="#111827" />
   <style>
     :root {
-      --bg: #0f172a;        /* slate-900 */
-      --card: #111827;      /* gray-900 */
-      --muted: #1f2937;     /* gray-800 */
-      --text: #e5e7eb;      /* gray-200 */
-      --accent: #3b82f6;    /* blue-500 */
+      --bg: #0f172a;
+      --card: #111827;
+      --muted: #1f2937;
+      --text: #e5e7eb;
+      --accent: #3b82f6;
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
     html, body { height: 100%; }
@@ -19,35 +19,25 @@
       margin: 0; padding: 0;
       background: linear-gradient(180deg, #0b1020, #0f172a 35%, #0b1020);
       color: var(--text);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, Apple SD Gothic Neo, "맑은 고딕", sans-serif;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, "맑은 고딕", sans-serif;
     }
 
-    .wrap {
-      min-height: 100dvh;
-      display: grid;
-      grid-template-rows: auto 1fr auto;
-    }
-    header, footer {
-      padding: 12px 16px;
-      display: flex; align-items: center; gap: 8px;
-    }
+    .wrap { min-height: 100dvh; display: grid; grid-template-rows: auto 1fr auto; }
+    header, footer { padding: 12px 16px; display: flex; align-items: center; gap: 8px; }
     header .title { font-size: 18px; font-weight: 700; }
     .spacer { flex: 1; }
 
     .btn {
       border: 0; border-radius: 14px;
-      padding: 12px 16px; font-weight: 700; cursor: pointer;
+      padding: 10px 14px; font-weight: 700; cursor: pointer;
       background: var(--muted); color: var(--text);
-      min-height: 44px; font-size: 16px;
+      min-height: 36px; font-size: 14px;
+      transition: background .2s;
     }
     .btn.primary { background: var(--accent); color: white; }
+    .btn:hover { background: #2c3a52; }
 
-    .page {
-      display: none;
-      padding: 16px;
-      max-width: 960px;
-      margin: 0 auto;
-    }
+    .page { display: none; padding: 16px; max-width: 960px; margin: 0 auto; }
     .page.active { display: block; }
 
     .hero { text-align: center; padding: 24px 16px 8px; }
@@ -87,6 +77,9 @@
       padding: 8px 12px; background: var(--muted); border-radius: 999px; font-weight: 700; font-size: 13px;
       border: 1px solid #243042;
     }
+
+    #controlPanel { text-align: center; margin-top: 14px; display:none; }
+    #controlPanel .btn { margin: 4px; }
 
     footer { font-size: 12px; opacity: .7; justify-content: center; }
   </style>
@@ -132,6 +125,12 @@
       <div class="card">
         <div id="roomList" class="grid rooms"></div>
       </div>
+
+      <!-- 안내 제어 패널 -->
+      <div id="controlPanel" class="card">
+        <button id="pauseBtn" class="btn primary" onclick="pauseOrResume()">⏸ 멈춤</button>
+        <button class="btn" onclick="returnHome()">⏮ 원래 위치로 복귀</button>
+      </div>
     </section>
 
     <footer>
@@ -141,7 +140,7 @@
 
   <script>
     /* ============================
-       0) 호실/연구실 매핑 데이터
+       1) 전체 호실 매핑
        ============================ */
     const roomNames = {
       1: {
@@ -257,6 +256,8 @@
     };
 
     let currentFloor = 1;
+    let isNavigating = false;
+    let isPaused = false;
 
     /* 페이지 전환 */
     function showPage(id) {
@@ -282,32 +283,18 @@
     function buildRoomsForFloor(floor) {
       const container = document.getElementById('roomList');
       container.innerHTML = '';
-
       const mapping = roomNames[floor];
       if (!mapping) return;
 
-      const keys = Object.keys(mapping).map(String).sort((a, b) => {
-        const [an, asuf] = a.split('-');
-        const [bn, bsuf] = b.split('-');
-        const na = parseInt(an, 10), nb = parseInt(bn, 10);
-        if (na !== nb) return na - nb;
-        if (!asuf && bsuf) return -1;
-        if (asuf && !bsuf) return 1;
-        return (asuf || '').localeCompare(bsuf || '', 'ko');
-      });
-
-      for (const k of keys) {
+      for (const k of Object.keys(mapping)) {
         const card = document.createElement('div');
         card.className = 'room';
-        card.addEventListener('click', () => selectRoom(k)); // ✅ 클릭 시 안내 확인창
-
+        card.addEventListener('click', () => selectRoom(k));
         const num = document.createElement('div');
         num.className = 'num';
         num.textContent = `${k}호`;
-
         const name = document.createElement('div');
         name.textContent = mapping[k];
-
         card.appendChild(num);
         card.appendChild(name);
         container.appendChild(card);
@@ -316,27 +303,67 @@
 
     /* 안내 시작 */
     async function selectRoom(roomNumber) {
-  const ok = confirm(`${roomNumber}호로 안내를 진행하시겠습니까?`);
-  if (!ok) return;
+      const ok = confirm(`${roomNumber}호로 안내를 진행하시겠습니까?`);
+      if (!ok) return;
 
-  try {
-    // 서버 호출 (데모용이니 실제 URL/토큰 필요)
-    const res = await fetch("http://localhost:8000/api/navigate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ room: roomNumber })
-    });
+      try {
+        const res = await fetch("http://localhost:8000/api/navigate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ room: roomNumber })
+        });
 
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        alert(`${roomNumber}호로 안내를 시작합니다 🚀`);
+        isNavigating = true;
+        isPaused = false;
+        document.getElementById("controlPanel").style.display = "block";
+        document.getElementById("pauseBtn").textContent = "⏸ 멈춤";
+      } catch (err) {
+        console.error(err);
+        alert("서버 연결 실패 😢");
+      }
     }
 
-    alert(`${roomNumber}호로 안내를 시작합니다 🚀`);
-  } catch (err) {
-    console.error(err);
-    alert("서버 연결 실패 😢");
-  }
-}
+    /* 멈춤 / 다시 출발 */
+    async function pauseOrResume() {
+      if (!isNavigating) return;
+      const endpoint = isPaused ? "/api/resume" : "/api/pause";
+      try {
+        const res = await fetch("http://localhost:8000" + endpoint, { method: "POST" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        if (isPaused) {
+          alert("안내를 다시 시작합니다 ▶");
+          document.getElementById("pauseBtn").textContent = "⏸ 멈춤";
+          isPaused = false;
+        } else {
+          alert("안내를 멈췄습니다 ⏸");
+          document.getElementById("pauseBtn").textContent = "▶ 다시 출발";
+          isPaused = true;
+        }
+      } catch (err) {
+        console.error(err);
+        alert("서버 연결 실패 😢");
+      }
+    }
+
+    /* 수동 복귀 */
+    async function returnHome() {
+      if (!isNavigating) return;
+      try {
+        const res = await fetch("http://localhost:8000/api/return_home", { method: "POST" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        alert("로봇이 원래 위치로 복귀합니다 ⏮");
+        isNavigating = false;
+        document.getElementById("controlPanel").style.display = "none";
+      } catch (err) {
+        console.error(err);
+        alert("서버 연결 실패 😢");
+      }
+    }
 
     /* 검색 */
     function filterRooms() {
@@ -344,8 +371,7 @@
       const rooms = document.querySelectorAll('#roomList .room');
       rooms.forEach(r => {
         const text = r.querySelector('.num').textContent.replace('호','');
-        const ok = !q || text.includes(q);
-        r.style.display = ok ? '' : 'none';
+        r.style.display = !q || text.includes(q) ? '' : 'none';
       });
     }
     function clearSearch(focus = true) {
@@ -355,9 +381,7 @@
       if (focus) el.focus();
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      showPage('page-home');
-    });
+    document.addEventListener('DOMContentLoaded', () => { showPage('page-home'); });
   </script>
 </body>
 </html>
